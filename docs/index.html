@@ -57,6 +57,9 @@
   .r.call{background:var(--call);color:#fff} .r.near{background:var(--near);color:var(--ink)} .r.ok{color:var(--paper)}
   .more{display:block;margin:14px auto 0;background:transparent;border:1px solid var(--brass);color:var(--brass2);padding:8px 26px;border-radius:4px;cursor:pointer;font:inherit}
   .more[hidden]{display:none}
+  .notice{margin:16px 0 0;padding:10px 14px;border:1px solid var(--line);border-left:3px solid var(--brass);border-radius:4px;background:var(--ink2);font-size:13px}
+  .notice b{color:var(--brass2);font-weight:500}
+  footer a{color:var(--brass2)} footer b{color:var(--paper);font-weight:500}
   .empty{padding:40px;text-align:center;color:var(--mute)}
   footer{margin-top:26px;color:var(--mute);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
   footer p{margin:4px 0}
@@ -72,6 +75,8 @@
     </div>
     <div class="meta" id="meta">載入中…</div>
   </header>
+
+  <div class="notice reveal">本頁數據為依交易所盤後公開資料自行計算之<b>估算值</b>，僅供研究參考，不構成投資建議；個人帳戶實際維持率與追繳，請以往來券商通知為準。</div>
 
   <section class="cards reveal" id="cards"></section>
 
@@ -90,8 +95,8 @@
       <option value="ssr">券資比 高→低</option>
     </select>
     <div class="legend">
-      <span><i class="dot" style="background:var(--call)"></i>&lt;130% 追繳</span>
-      <span><i class="dot" style="background:var(--near)"></i>130–140% 接近</span>
+      <span><i class="dot" style="background:var(--call)"></i>估算 &lt;130%</span>
+      <span><i class="dot" style="background:var(--near)"></i>估算 130–140%</span>
     </div>
   </div>
 
@@ -108,9 +113,16 @@
   <button class="more" id="more" hidden>載入更多</button>
 
   <footer>
-    <p>維持率為估算值：融資／融券成本以每日融資增減張數 × 當日均價加權推估，融資成數上市 60%、上櫃 50%，融券保證金 90%；股票分割、減資已依交易所參考價自動調整；未反映個股調降成數、除權息與券商個別帳戶狀況，數字會與交易所及券商實際公布值有落差。</p>
-    <p>本頁僅使用交易所盤後公開資料，每個交易日收盤後更新一次；價格為該日收盤價，非即時行情。融資維持率為單純融資口徑，與證交所公布之「整戶擔保維持率」（融資融券合併計算）口徑不同，數值通常較低。</p>
-    <p>資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料。本頁僅供研究參考，不構成任何投資建議。活下去比什麼都重要。</p>
+    <p><b>使用目的</b>：本頁為投資教育與市場研究用途，呈現信用交易統計之估算結果，不構成任何有價證券之推介、買賣建議或要約，亦不代客操作。</p>
+    <p><b>以官方資料為準</b>：本頁數據可能有延遲、錯誤或遺漏，一切以臺灣證券交易所、證券櫃檯買賣中心公布資料為準。個人帳戶之實際維持率、追繳及處分，依您往來券商之通知與規定辦理。</p>
+    <p><b>估算標示說明</b>：表中紅、橘標示僅代表該股融資部位之「估算」維持率低於 130%／140%，不代表該股融資戶已遭追繳；實際追繳以投資人「整戶」擔保維持率計算，與單一個股估算值不同。</p>
+    <p><b>估算方法</b>：融資／融券成本以每日融資增減張數 × 當日均價加權推估，融資成數上市 60%、上櫃 50%，融券保證金 90%；股票分割、減資已依交易所參考價自動調整，未反映個股調降成數、除權息與券商個別帳戶狀況。本頁為單純融資口徑，與證交所公布之「整戶擔保維持率」（融資融券合併計算）不同，數值通常較低。</p>
+    <p><b>資料性質</b>：僅使用交易所盤後公開資料，每個交易日收盤後更新一次；價格為該日收盤價，非即時行情。</p>
+    <p><b>風險提示</b>：融資融券為高槓桿交易，股價下跌時可能遭追繳或處分，損失可能超過原始投入資金，投資前請審慎評估自身風險承受能力。</p>
+    <p><b>利益揭露</b>：作者或其關係人可能持有本頁所列之有價證券。</p>
+    <p><b>資料來源與權利</b>：臺灣證券交易所、證券櫃檯買賣中心公開資料；原始交易資訊之權利屬各該單位所有，本頁為自行加值計算之結果。</p>
+    <p><b>錯誤回報</b>：發現數據有誤，請至 <a href="https://github.com/msbk-tw/margin-monitor/issues" target="_blank" rel="noopener">GitHub 回報頁</a> 留言，我們會盡速更正。</p>
+    <p>活下去比什麼都重要。</p>
   </footer>
 </div>
 
@@ -151,10 +163,10 @@
         ${ix ? `<div class="mono"><span class="big">${fmt(ix.value)}</span>
           <span class="${sgn(ix.chg)}"> ${ix.chg > 0 ? "+" : ""}${fmt(ix.chg)}（${fmt(ix.pct)}%）</span></div>` : ""}
         <div class="row2"><span>市場融資維持率（估）<b class="mono"> ${m.ratio ? fmt(m.ratio) + "%" : "–"}</b></span>
-          <span>報價覆蓋 <b class="mono">${m.coverage != null ? fmt(m.coverage, 1) + "%" : "–"}</b></span></div>
+          <span>統計 <b class="mono">${data.rows.filter(r => r.mk === mk).length}</b> 檔</span></div>
         <div class="bar"><i style="width:${pct}%"></i></div>
-        <div class="row2"><span>追繳 <b class="mono" style="color:var(--call)">${m.call}</b> 檔</span>
-          <span>接近追繳 <b class="mono" style="color:var(--near)">${m.near}</b> 檔</span></div>
+        <div class="row2"><span>估算 &lt;130% <b class="mono" style="color:var(--call)">${m.call}</b> 檔</span>
+          <span>估算 130–140% <b class="mono" style="color:var(--near)">${m.near}</b> 檔</span></div>
       </div>`;
     }).join("");
   }
@@ -197,9 +209,8 @@
 
   function render() {
     const bd = data.baseline_date, bdf = `${bd.slice(0,4)}-${bd.slice(4,6)}-${bd.slice(6)}`;
-    $("#meta").innerHTML = `資料時間 <b>${esc(data.snapshot)}</b>
-      <span class="pill">${data.mode === "intraday" ? "盤中估算" : "盤後"}</span><br>
-      資料日期 <b>${bdf}</b>　每個交易日盤後約 21:40 更新`;
+    $("#meta").innerHTML = `資料日期 <b>${bdf}</b><span class="pill">盤後估算</span><br>
+      每個交易日盤後約 21:40 更新・非即時行情・非投資建議`;
     renderCards();
     renderTable();
   }
