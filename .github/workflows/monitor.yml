@@ -32,6 +32,8 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main               # 排隊等候後，從最新資料開始（不是觸發當下的舊版本）
 
       - uses: actions/setup-python@v5
         with:
@@ -68,6 +70,10 @@ jobs:
             echo "沒有變更"
           else
             git commit -m "data: ${{ steps.m.outputs.mode }} $(TZ=Asia/Taipei date '+%F %H:%M')"
-            git pull --rebase
+            if ! git pull --rebase; then
+              echo "::warning::與其他更新衝突，略過本次提交"
+              git rebase --abort
+              exit 0
+            fi
             git push
           fi
