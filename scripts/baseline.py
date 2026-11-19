@@ -175,7 +175,7 @@ def tpex_quotes(d: dt.date) -> dict:
 
 def refresh_shares() -> dict:
     cache = load_json(SHARES_PATH, {})
-    if cache.get("updated") and (now_tw().date() - dt.date.fromisoformat(cache["updated"])).days < 7:
+    if cache.get("v") == 2 and cache.get("updated") and (now_tw().date() - dt.date.fromisoformat(cache["updated"])).days < 7:
         return cache.get("data", {})
     data = {}
     for url in ("https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
@@ -183,14 +183,17 @@ def refresh_shares() -> dict:
         try:
             for x in get_json(url, tries=2):
                 code = next((str(x[k]).strip() for k in ("公司代號", "SecuritiesCompanyCode", "CompanyCode") if k in x), None)
-                sh = next((num(v) for k, v in x.items() if "股數" in k or k in ("IssueShares", "IssuedShares")), None)
+                # 優先取「已發行普通股數」，避免誤抓私募股數、特別股等欄位
+                keys = sorted((k for k in x if "股數" in k or k in ("IssueShares", "IssuedShares")),
+                              key=lambda k: 0 if ("已發行" in k or k.startswith("Issue")) else 1)
+                sh = next((num(x[k]) for k in keys if num(x[k])), None)
                 if code and sh:
                     data[code] = sh
         except (RuntimeError, TypeError) as e:
             log("發行股數抓取失敗（只影響市值欄）：", e)
         polite_sleep(1.5)
     if data:
-        save_json(SHARES_PATH, {"updated": now_tw().date().isoformat(), "data": data})
+        save_json(SHARES_PATH, {"v": 2, "updated": now_tw().date().isoformat(), "data": data})
         return data
     return cache.get("data", {})
 
