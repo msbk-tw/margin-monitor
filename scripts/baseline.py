@@ -81,7 +81,7 @@ def twse_quotes(d: dt.date) -> dict:
 
 
 # ---------------- 上櫃（櫃買中心）----------------
-# 櫃買網站改版過，先試舊版（實測可用），失敗再試新版；欄位用名稱比對，找不到才用舊版預設順序。
+# 櫃買網站改版過：融資用舊版端點（依日期正確），行情用新版 afterTrading/otc（舊版會忽略日期）；欄位用名稱比對，找不到才用舊版預設順序。
 
 TPEX_MARGIN_FIELDS = ["代號", "名稱", "前資餘額(張)", "資買", "資賣", "現償", "資餘額", "資屬證金",
                       "資使用率", "資限額", "前券餘額(張)", "券賣", "券買", "券償", "券餘額", "券屬證金",
@@ -90,11 +90,16 @@ TPEX_QUOTE_FIELDS = ["代號", "名稱", "收盤", "漲跌", "開盤", "最高",
                      "成交金額(元)", "成交筆數"]
 
 
-def _tpex_try(candidates):
+def _tpex_try(candidates, d: dt.date):
+    """依序嘗試端點；回傳日期必須等於查詢日（舊版行情端點會忽略日期、永遠回傳最新一天）。"""
     errs = []
     for url, params in candidates:
         try:
             js = get_json(url, params, tries=2)
+            got = str(js.get("date") or js.get("reportDate") or "") if isinstance(js, dict) else ""
+            if got and got.replace("/", "") not in (f"{d:%Y%m%d}", roc(d).replace("/", "")):
+                errs.append(f"{url} 回傳日期 {got} ≠ {d}")
+                continue
             tabs = [t for t in iter_tables(js) if t[2]]
             if tabs:
                 return max(tabs, key=lambda t: len(t[2]))
@@ -111,7 +116,7 @@ def tpex_margin(d: dt.date) -> dict:
         ("https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php",
          {"l": "zh-tw", "o": "json", "d": roc(d)}),
         ("https://www.tpex.org.tw/www/zh-tw/margin/balance", {"date": f"{d:%Y/%m/%d}", "response": "json"}),
-    ])
+    ], d)
     if not t:
         return {}
     _, fields, rows = t
@@ -139,11 +144,9 @@ def tpex_margin(d: dt.date) -> dict:
 
 def tpex_quotes(d: dt.date) -> dict:
     t = _tpex_try([
-        ("https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php",
-         {"l": "zh-tw", "o": "json", "d": roc(d), "se": "AL"}),
-        ("https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQ",
-         {"date": f"{d:%Y/%m/%d}", "id": "", "response": "json"}),
-    ])
+        ("https://www.tpex.org.tw/www/zh-tw/afterTrading/otc",
+         {"date": f"{d:%Y/%m/%d}", "type": "EW", "response": "json"}),
+    ], d)
     if not t:
         return {}
     _, fields, rows = t
