@@ -108,8 +108,8 @@
   <button class="more" id="more" hidden>載入更多</button>
 
   <footer>
-    <p>維持率為估算值：融資／融券成本以每日融資增減張數 × 當日均價加權推估，融資成數上市 60%、上櫃 50%，融券保證金 90%；未反映個股調降成數、除權息、減資與券商個別帳戶狀況，數字會與交易所及券商實際公布值有落差。</p>
-    <p>盤中以證交所基本市況報導（MIS）報價 × 前一交易日盤後融資餘額估算，資增減與券資比仍為基準日數據；無有效報價的個股不估算、不顯示過期價格。</p>
+    <p>維持率為估算值：融資／融券成本以每日融資增減張數 × 當日均價加權推估，融資成數上市 60%、上櫃 50%，融券保證金 90%；股票分割、減資已依交易所參考價自動調整；未反映個股調降成數、除權息與券商個別帳戶狀況，數字會與交易所及券商實際公布值有落差。</p>
+    <p>本頁僅使用交易所盤後公開資料，每個交易日收盤後更新一次；價格為該日收盤價，非即時行情。融資維持率為單純融資口徑，與證交所公布之「整戶擔保維持率」（融資融券合併計算）口徑不同，數值通常較低。</p>
     <p>資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料。本頁僅供研究參考，不構成任何投資建議。活下去比什麼都重要。</p>
   </footer>
 </div>
@@ -142,15 +142,15 @@
   const stOf = v => v == null ? null : v < data.rules.call ? "call" : v < data.rules.near ? "near" : "ok";
 
   function renderCards() {
-    const names = {TWSE: "加權指數｜上市", TPEX: "櫃買指數｜上櫃"};
+    const names = {TWSE: "上市", TPEX: "上櫃"};
     $("#cards").innerHTML = ["TWSE", "TPEX"].map(mk => {
       const m = data.markets[mk] || {}, ix = m.index;
       const pct = m.ratio ? Math.max(0, Math.min(100, (m.ratio - 100) / 1.2)) : 0;
       return `<div class="card">
         <h3>${names[mk]}</h3>
-        <div class="mono">${ix ? `<span class="big">${fmt(ix.value)}</span>
-          <span class="${sgn(ix.chg)}"> ${ix.chg > 0 ? "+" : ""}${fmt(ix.chg)}（${fmt(ix.pct)}%）</span>` : `<span class="big na">–</span>`}</div>
-        <div class="row2"><span>大盤融資維持率（估）<b class="mono"> ${m.ratio ? fmt(m.ratio) + "%" : "–"}</b></span>
+        ${ix ? `<div class="mono"><span class="big">${fmt(ix.value)}</span>
+          <span class="${sgn(ix.chg)}"> ${ix.chg > 0 ? "+" : ""}${fmt(ix.chg)}（${fmt(ix.pct)}%）</span></div>` : ""}
+        <div class="row2"><span>市場融資維持率（估）<b class="mono"> ${m.ratio ? fmt(m.ratio) + "%" : "–"}</b></span>
           <span>報價覆蓋 <b class="mono">${m.coverage != null ? fmt(m.coverage, 1) + "%" : "–"}</b></span></div>
         <div class="bar"><i style="width:${pct}%"></i></div>
         <div class="row2"><span>追繳 <b class="mono" style="color:var(--call)">${m.call}</b> 檔</span>
@@ -197,9 +197,9 @@
 
   function render() {
     const bd = data.baseline_date, bdf = `${bd.slice(0,4)}-${bd.slice(4,6)}-${bd.slice(6)}`;
-    $("#meta").innerHTML = `報價時間 <b>${esc(data.snapshot)}</b>
+    $("#meta").innerHTML = `資料時間 <b>${esc(data.snapshot)}</b>
       <span class="pill">${data.mode === "intraday" ? "盤中估算" : "盤後"}</span><br>
-      融資餘額基準日 <b>${bdf}</b>　盤中快照 09:10・10:00・11:00・12:00・13:20`;
+      資料日期 <b>${bdf}</b>　每個交易日盤後約 21:40 更新`;
     renderCards();
     renderTable();
   }
