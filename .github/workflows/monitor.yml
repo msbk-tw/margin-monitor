@@ -3,9 +3,7 @@ name: margin-monitor
 # GitHub 的 cron 一律是 UTC：台北時間 = UTC + 8
 on:
   schedule:
-    - cron: '10 1 * * 1-5'      # 09:10 盤中
-    - cron: '0 2,3,4 * * 1-5'   # 10:00 / 11:00 / 12:00 盤中
-    - cron: '20 5 * * 1-5'      # 13:20 盤中
+    # 只做盤後更新：盤中即時行情的轉載需證交所授權，取得書面確認前不啟用
     - cron: '40 13 * * 1-5'     # 21:40 盤後基準（融資資料約 21:00 後公布）
     - cron: '30 15 * * 1-5'     # 23:30 盤後補跑（若 21:40 還沒公布）
   workflow_dispatch:
@@ -13,7 +11,7 @@ on:
       mode:
         description: '執行模式'
         type: choice
-        options: [baseline, intraday, backfill]
+        options: [baseline, backfill]
         default: baseline
       days:
         description: 'backfill 回補交易日數'
@@ -47,10 +45,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "40 13 * * 1-5" ] || [ "${{ github.event.schedule }}" = "30 15 * * 1-5" ]; then
-            echo "mode=baseline" >> "$GITHUB_OUTPUT"
           else
-            echo "mode=intraday" >> "$GITHUB_OUTPUT"
+            echo "mode=baseline" >> "$GITHUB_OUTPUT"
           fi
 
       - name: 執行
@@ -58,7 +54,6 @@ jobs:
           case "${{ steps.m.outputs.mode }}" in
             backfill) python scripts/baseline.py --backfill "${{ inputs.days || '60' }}" ;;
             baseline) python scripts/baseline.py ;;
-            intraday) python scripts/intraday.py ;;
           esac
 
       - name: 提交資料
