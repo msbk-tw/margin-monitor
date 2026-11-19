@@ -325,7 +325,7 @@ def main():
         return
     if run_day(d, state):
         save_json(STATE_PATH, state)
-        publish(state, with_index=(d == now_tw().date()))
+        publish(state, with_index=False)   # 不使用 MIS 即時行情（授權確認前）
 
 
 if __name__ == "__main__":
