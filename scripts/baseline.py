@@ -209,6 +209,18 @@ def roll_cost(prev_cost, add, bal, px):
     return ((bal - new) * prev_cost + new * px) / bal
 
 
+def corp_action_factor(prev_close, close, change) -> float:
+    """偵測分割、減資、面額變更：交易所當日參考價（收盤 − 漲跌）與我們記錄的前收盤差超過 20%，
+    就回傳調整倍數讓成本同比例縮放；一般除權息落在 ±20% 內，不調整。"""
+    if not (prev_close and close and change is not None):
+        return 1.0
+    ref = close - change
+    if ref <= 0:
+        return 1.0
+    f = ref / prev_close
+    return f if (f < 0.8 or f > 1.25) else 1.0
+
+
 def run_day(d: dt.date, state: dict) -> bool:
     log(f"處理 {d} …")
     tm = twse_margin(d)
@@ -230,6 +242,12 @@ def run_day(d: dt.date, state: dict) -> bool:
             q = qt.get(code) or {}
             px = q.get("avg")
             s = stocks.get(code, {})
+            adj = corp_action_factor(s.get("last_close"), q.get("close"), q.get("change"))
+            if adj != 1.0:
+                log(f"{code} {r['name']} 參考價重設（分割／減資等），成本 ×{adj:.4f}")
+                for k in ("m_cost", "s_cost"):
+                    if s.get(k):
+                        s[k] *= adj
             stocks[code] = {
                 "market": market, "name": r["name"] or q.get("name") or s.get("name", ""),
                 "etf": code.startswith("00"),
@@ -239,6 +257,7 @@ def run_day(d: dt.date, state: dict) -> bool:
                 "s_cost": roll_cost(s.get("s_cost"), r["s_sell"], r["s_bal"], px),
                 "m_rate": DEFAULT_MARGIN_RATE[market],
                 "close": q.get("close"), "change": q.get("change"),
+                "last_close": q.get("close") or s.get("last_close"),
                 "days": s.get("days", 0) + 1, "note": r["note"], "date": ds,
             }
     state["last_date"] = ds
